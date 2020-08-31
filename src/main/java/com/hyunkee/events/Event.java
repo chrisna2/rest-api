@@ -39,4 +39,21 @@ public class Event {
 	private EventStatus eventStatus = EventStatus.DRAFT;
 	//private EventStatus eventStatus = EventStatus.DRAFT;
 	
+	public void update() {
+		//무료 여부 파악
+		if(this.basePrice == 0 && this.maxPrice == 0) {
+			this.free = true;
+		}
+		else {
+			this.free = false;
+		}
+		
+		//온-오프라인 여부 파악
+		if(this.location == null || this.location.isBlank() ||  this.location.isEmpty()) {
+			this.offline = false;
+		}
+		else {
+			this.offline = true;
+		}
+	}
 }
