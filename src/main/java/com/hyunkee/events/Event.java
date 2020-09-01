@@ -14,7 +14,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 
 @Builder @AllArgsConstructor @NoArgsConstructor
 @Getter @Setter @EqualsAndHashCode(of = "id")
@@ -49,6 +48,7 @@ public class Event {
 		}
 		
 		//온-오프라인 여부 파악
+		//java 11 => String.isBlank 추가되었다. 자바 11부터라는데... 자바 8바라보는 우리 입장에서... 
 		if(this.location == null || this.location.isBlank() ||  this.location.isEmpty()) {
 			this.offline = false;
 		}

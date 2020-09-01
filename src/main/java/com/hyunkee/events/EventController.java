@@ -7,7 +7,9 @@ import java.net.URI;
 import javax.validation.Valid;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.hateoas.Link;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
@@ -65,8 +67,15 @@ public class EventController {
 		Event newEvent = this.eventRepository.save(event);
 		// --> 실제로는 서비스 단에서 처리 (주의!!)
 		
-		URI createUri = linkTo(EventController.class).slash(newEvent.getId()).toUri();
-		return ResponseEntity.created(createUri).body(event);
+		//URI createUri = linkTo(EventController.class).slash(newEvent.getId()).toUri();
+		
+        WebMvcLinkBuilder selfLinkBuilder = linkTo(EventController.class).slash(newEvent.getId());
+        URI createdUri = selfLinkBuilder.toUri();
+        EventResource eventResource = new EventResource(event);
+        eventResource.add(linkTo(EventController.class).withRel("query-events"));
+        //eventResource.add(selfLinkBuilder.withSelfRel()); //self link는  EventResource 생성자를 통해 생성
+        eventResource.add(selfLinkBuilder.withRel("update-event"));
+		return ResponseEntity.created(createdUri).body(eventResource); //또또 잊었네
 
 	}
 
