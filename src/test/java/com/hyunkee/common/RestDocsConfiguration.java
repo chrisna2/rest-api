@@ -32,6 +32,8 @@ public class RestDocsConfiguration {
 									   .withRequestDefaults(prettyPrint()) //요청값 본문 -> 기본 값 포맷팅 처리
 									   .withResponseDefaults(prettyPrint());//응답값 본문 
 		
+		//람다 표현식, stream 쓰는 방법 
+		
 		
 	}
 }
