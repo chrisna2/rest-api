@@ -75,6 +75,7 @@ public class EventController {
         eventResource.add(linkTo(EventController.class).withRel("query-events"));
         //eventResource.add(selfLinkBuilder.withSelfRel()); //self link는  EventResource 생성자를 통해 생성
         eventResource.add(selfLinkBuilder.withRel("update-event"));
+        eventResource.add(new Link("/docs/index.html#resources-events-create").withRel("profile"));
 		return ResponseEntity.created(createdUri).body(eventResource); //또또 잊었네
 
 	}

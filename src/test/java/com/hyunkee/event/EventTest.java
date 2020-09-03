@@ -33,21 +33,8 @@ public class EventTest {
 	//테스트케이스 5 : 비즈니스 로직 테스트 구현(단위테스트, "무료" 여부 파악)
 		@Test
 		@DisplayName("비즈니스 로직 테스트 구현(단위테스트, 무료 여부 파악)")
-		public void domain_free_Test(int basePrice, int maxPrice, boolean isFree) throws Exception {
+		public void domain_free_Test() throws Exception {
 			
-			/*TO - BE */
-			// Given
-			Event event = Event.builder()
-							.basePrice(basePrice)
-							.maxPrice(maxPrice)
-							.build();
-			
-			// When
-			event.update();
-			assertThat(event.isFree()).isEqualTo(isFree);
-			
-			
-			/* AS - IS
 			// Given
 			Event event = Event.builder()
 							.basePrice(0)
@@ -76,7 +63,6 @@ public class EventTest {
 			// When
 			event.update();
 			assertThat(event.isFree()).isFalse();
-			*/
 			
 		}
 		
