@@ -3,16 +3,21 @@ package com.hyunkee.events;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.net.URI;
+import java.util.Optional;
 
 import javax.validation.Valid;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -82,9 +87,37 @@ public class EventController {
 		return ResponseEntity.created(createdUri).body(eventResource); //또또 잊었네
 
 	}
+	
+	//30개의 이벤트를 10개씩 두번째 페이지 조회하기
+	@GetMapping
+	public ResponseEntity inqueryEvent(Pageable pageable, PagedResourcesAssembler<Event> assambler) {
+		Page<Event> page = this.eventRepository.findAll(pageable);
+		//각각에 들어있는 이벤트에 대한 링크를 작성하기 위해서 다음과 같이 작성
+		var pagedResources = assambler.toModel(page, e -> new EventResource(e));
+		pagedResources.add(new Link("/docs/index.html#resources-events-list").withRel("profile"));
+		return ResponseEntity.ok(pagedResources);
+	}
+	
+	
 
 	private ResponseEntity<ErrorsResource> badReq(Errors errors) {
 		return ResponseEntity.badRequest().body(new ErrorsResource(errors));
 	}
 
+	@GetMapping("/{id}")
+	public ResponseEntity getEventOne(Integer id) {
+        Optional<Event> optionalEvent = this.eventRepository.findById(id);
+        
+        if (optionalEvent.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Event event = optionalEvent.get();
+        EventResource eventResource = new EventResource(event);
+        eventResource.add(new Link("/docs/index.html#resources-events-get").withRel("profile"));
+
+        return ResponseEntity.ok(eventResource);
+	}
+	
+	
 }

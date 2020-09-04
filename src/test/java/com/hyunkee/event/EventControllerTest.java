@@ -9,6 +9,8 @@ import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.docu
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.relaxedResponseFields;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -16,6 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDateTime;
+import java.util.stream.IntStream;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.DisplayName;
@@ -35,8 +38,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hyunkee.common.RestDocsConfiguration;
+import com.hyunkee.common.TestDescription;
 import com.hyunkee.events.Event;
 import com.hyunkee.events.EventDto;
+import com.hyunkee.events.EventRepository;
 import com.hyunkee.events.EventStatus;
 
 
@@ -56,7 +61,8 @@ public class EventControllerTest {
 	ObjectMapper objectMapper;
 	
 	//@MockBean //슬라이싱 테스트를 사용할 경우 사용
-	//EventRepository eventRepository;
+	@Autowired
+	EventRepository eventRepository;
 	
 	//테스트케이스 1 : 입력값들을 전달하면 JSON 응답으로 201이 나오는지 확인
 	@Test
@@ -344,6 +350,64 @@ public class EventControllerTest {
 					;
 		
 	}
+	
+	
+	@Test
+	@DisplayName("30개의 이벤트를 10개씩 두번째 페이지 조회하기")
+	public void queryEvent() throws Exception{
+		//테스트 이벤트 생성 람다식
+		IntStream.range(0, 30).forEach(i -> {
+			this.generateEvent(i);
+		});
+		
+		//이벤트 조회 - 페이징 - 정렬
+		this.mockMvc.perform(get("/api/events")
+								.param("page", "1")
+								.param("size", "10")
+								.param("sort", "name,DESC"))
+					.andDo(print())
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("page").exists())
+					.andExpect(jsonPath("_embedded.eventList[0]._links.self").exists())
+					;
+	}
+
+	
+	
+	
+	@Test
+	@DisplayName("기존의 이벤트를 하나 조회하기.")
+	public void getEvent() throws Exception{
+		Event event = this.generateEvent(100);
+		
+		this.mockMvc.perform(get("/api/event/{id}", event.getId()))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("name").exists())
+					.andExpect(jsonPath("id").exists())
+					.andExpect(jsonPath("_link.self").exists())
+					.andExpect(jsonPath("_link.profile").exists())
+					.andDo(document("get-an-event"))
+				;	
+	}
+	
+	private Event generateEvent(int i) {
+		Event event = Event.builder()
+						.name("event"+i)
+						.description("test_Event_" + i)
+						.build();
+		
+		return this.eventRepository.save(event);
+	}
+	
+    @Test
+    @DisplayName("없는 이벤트는 조회했을 때 404 응답받기")
+    public void getEvent404() throws Exception {
+        // When & Then
+        this.mockMvc.perform(get("/api/events/11883"))
+                .andExpect(status().isNotFound());
+    }
+
+
 	
 	
 	
