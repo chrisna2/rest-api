@@ -29,6 +29,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -45,6 +46,7 @@ import com.hyunkee.events.EventStatus;
 @ExtendWith(SpringExtension.class)
 @AutoConfigureRestDocs // API 문서 작성
 @Import(RestDocsConfiguration.class) // API 문서 포맷팅 처리
+@ActiveProfiles("test")//기본 application.properties (OverRiding) application-test.properties (DB소스가 다름)
 public class EventControllerTest {
 
 	@Autowired
@@ -164,12 +166,13 @@ public class EventControllerTest {
 							.content(this.objectMapper.writeValueAsString(eventDto)))
 					.andDo(print())
 					.andExpect(status().isBadRequest())
-					.andExpect(jsonPath("fieldError[0].objectName").exists())
-					.andExpect(jsonPath("fieldError[0].defaultMessage").exists())
-					.andExpect(jsonPath("fieldError[0].code").exists())
-					.andExpect(jsonPath("globalError[0].objectName").exists())
-					.andExpect(jsonPath("globalError[0].defaultMessage").exists())
-					.andExpect(jsonPath("globalError[0].code").exists())
+					//테스트 6을 거치며 수정 
+					.andExpect(jsonPath("content.fieldError[0].objectName").exists())
+					.andExpect(jsonPath("content.fieldError[0].defaultMessage").exists())
+					.andExpect(jsonPath("content.fieldError[0].code").exists())
+					.andExpect(jsonPath("content.globalError[0].objectName").exists())
+					.andExpect(jsonPath("content.globalError[0].defaultMessage").exists())
+					.andExpect(jsonPath("content.globalError[0].code").exists())
 					;
 		
 	}
@@ -308,7 +311,39 @@ public class EventControllerTest {
 		
 	}
 	
-	
+    //테스트케이스 7 : 입력한 값이 잘못 정의된 값인 경우에 에러가 발생하는 테스트
+	@Test
+	@DisplayName("입력한 값이 잘못 정의된 값인 경우에 에러가 발생하는 인덱스 테스트")
+	public void createEvent_Bad_Request_Wrong_Input_Index() throws Exception{
+ 		
+		EventDto eventDto = EventDto.builder()
+				.name("Spring")
+				.description("REST API Develop Test")
+				.beginEnrollmentDateTime(LocalDateTime.of(2020, 8, 28, 5, 18)) //┐잘못된 값 입력
+				.closeEnrollmentDateTime(LocalDateTime.of(2020, 7, 1, 23, 59)) //┘
+				.beginEventDateTime(LocalDateTime.of(2020, 8, 29, 5, 18))
+				.endEventDateTime(LocalDateTime.of(2020, 9, 1, 20, 00))
+				.basePrice(10000) //┐잘못된 값 입력
+				.maxPrice(2000)   //┘
+				.limitOfEnrollment(100)
+				.location("Seoul Sadangdong Mcdonald")
+				.build();
+		
+		this.mockMvc.perform(post("/api/events")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(this.objectMapper.writeValueAsString(eventDto)))
+					.andDo(print())
+					.andExpect(status().isBadRequest())
+					.andExpect(jsonPath("content.fieldError[0].objectName").exists())
+					.andExpect(jsonPath("content.fieldError[0].defaultMessage").exists())
+					.andExpect(jsonPath("content.fieldError[0].code").exists())
+					.andExpect(jsonPath("content.globalError[0].objectName").exists())
+					.andExpect(jsonPath("content.globalError[0].defaultMessage").exists())
+					.andExpect(jsonPath("content.globalError[0].code").exists())
+					.andExpect(jsonPath("_links.index").exists())
+					;
+		
+	}
 	
 	
 	

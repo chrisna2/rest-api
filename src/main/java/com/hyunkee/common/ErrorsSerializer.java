@@ -30,7 +30,7 @@ public class ErrorsSerializer extends JsonSerializer<Errors>{
 		//배열로 시작
 		//gen.writeStartObject();
 		
-		//필드 에러
+		//필드 에러 (수정 연습)
 		gen.writeStartObject();
 		
 		

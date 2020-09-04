@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import com.hyunkee.common.ErrorsResource;
+
 @Controller
 @RequestMapping(value = "/api/events", produces = MediaTypes.HAL_JSON_VALUE)
 public class EventController {
@@ -36,7 +38,7 @@ public class EventController {
 
 		// 바인딩 할때 에러 발생 여부 확인
 		if (errors.hasErrors()) {
-			return ResponseEntity.badRequest().body(errors);//이게 빠진거구나.. ㄷㄷ
+			return badReq(errors);//이게 빠진거구나.. ㄷㄷ
 		}
 		
 		//해당 리퀘스트에 Json을 보내고 싶으면 body에 json으로 변환이 가능한 대상의 값을 보내줘야 한다.
@@ -48,7 +50,8 @@ public class EventController {
 		eventValidator.validate(eventDto, errors);
 
 		if (errors.hasErrors()) {
-			return ResponseEntity.badRequest().body(errors);//이게 빠진거구나.. ㄷㄷ
+			//return ResponseEntity.badRequest().body(errors);//이게 빠진거구나.. ㄷㄷ
+			return badReq(errors);//리팩토링
 			
 			// Errors는 Json 형태의 데이터로 변환할 수 없기 때문에 해당 데이터에 대해 화면에 전송하기 위해서는 따로 JSON 변환을 해야
 			// 한다.
@@ -78,6 +81,10 @@ public class EventController {
         eventResource.add(new Link("/docs/index.html#resources-events-create").withRel("profile"));
 		return ResponseEntity.created(createdUri).body(eventResource); //또또 잊었네
 
+	}
+
+	private ResponseEntity<ErrorsResource> badReq(Errors errors) {
+		return ResponseEntity.badRequest().body(new ErrorsResource(errors));
 	}
 
 }
