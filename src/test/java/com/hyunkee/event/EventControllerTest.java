@@ -23,49 +23,22 @@ import java.util.stream.IntStream;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.web.servlet.MockMvc;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hyunkee.common.RestDocsConfiguration;
+import com.hyunkee.common.BaseControllerTest;
 import com.hyunkee.events.Event;
 import com.hyunkee.events.EventDto;
 import com.hyunkee.events.EventRepository;
 import com.hyunkee.events.EventStatus;
 
+public class EventControllerTest extends BaseControllerTest{
 
-//@WebMvcTest //슬라이싱 테스트 (mocktest)
-@SpringBootTest //통합테스트, 웹 쪽으로 관련된 테스트를 진행하기 가장 좋다.
-@AutoConfigureMockMvc
-@ExtendWith(SpringExtension.class)
-@AutoConfigureRestDocs // API 문서 작성
-@Import(RestDocsConfiguration.class) // API 문서 포맷팅 처리
-@ActiveProfiles("test")//기본 application.properties (OverRiding) application-test.properties (DB소스가 다름)
-public class EventControllerTest {
-
-	@Autowired
-	MockMvc mockMvc; //웹서버를 띄우지 않고 디스패처 서블릿을 생성, 속도는 단위테스트보다는 좀 걸림
-	
-	@Autowired
-	ObjectMapper objectMapper;
-	
 	//@MockBean //슬라이싱 테스트를 사용할 경우 사용
 	@Autowired
 	EventRepository eventRepository;
-	
-	@Autowired
-	ModelMapper modelMapper;
 	
 	//테스트케이스 1 : 입력값들을 전달하면 JSON 응답으로 201이 나오는지 확인
 	@Test
