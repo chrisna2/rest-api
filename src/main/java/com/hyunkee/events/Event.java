@@ -7,6 +7,9 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.ManyToOne;
+
+import com.hyunkee.account.Account;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -56,4 +59,12 @@ public class Event {
 			this.offline = true;
 		}
 	}
+	
+	//Event 와 Account 단방향 연결 JPA
+	@ManyToOne
+	private Account manager;
+	
+	
+	
+	
 }
