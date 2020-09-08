@@ -38,7 +38,9 @@ import lombok.Setter;
  * Security Interceptor -> 권한 확인 매니저 -> '인가' 확인, 사용자의 role을 확인 -> 인가 완료
  * 
  * 의존성 추가 <oath2>
- * 
+ * -> 앞으로 오는 모든 접속 설정이 인증 및 인가를 필요로 하게 된다.
+ * -> 기존에 테스트가 모두 깨지게 됨
+ * -> 따라서 스프링 시큐리티에 대한 설정이 필요
  * @author Hyun Kee Na
  *
  */
