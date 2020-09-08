@@ -22,7 +22,6 @@ import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-import org.aspectj.lang.annotation.Before;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +37,7 @@ import com.hyunkee.account.Account;
 import com.hyunkee.account.AccountReopository;
 import com.hyunkee.account.AccountRole;
 import com.hyunkee.account.AccountService;
+import com.hyunkee.common.AppProperties;
 import com.hyunkee.common.BaseControllerTest;
 import com.hyunkee.events.Event;
 import com.hyunkee.events.EventDto;
@@ -56,10 +56,13 @@ public class EventControllerTest extends BaseControllerTest{
 	@Autowired
 	AccountReopository accountReopository;
 	
+	@Autowired
+	AppProperties appProperties;
+	
 	@BeforeEach// junit4 @Before 대응 -> 테스트 케이스가 실행하면서 이전의 인메모리 db 데이터 삭제
 	public void init() {
 		this.eventRepository.deleteAll();
-		this.accountReopository.deleteAll();
+		//this.accountReopository.deleteAll(); -> appConfig에서 1번만 생성 되기 때문에 굳이 초기화 시킬 필요 없다.
 	}
 	
 	//테스트케이스 1 : 입력값들을 전달하면 JSON 응답으로 201이 나오는지 확인
@@ -119,26 +122,22 @@ public class EventControllerTest extends BaseControllerTest{
 	 */
 	private String getOauth2Token() throws Exception{
 		
+		/* 
 		//서버 기동시 걔정 접속 테스트 걔정
-		String username = "test@gmail.com";
-		String password = "test";
-				
 		Account test = Account.builder()
-							.email(username)
-							.password(password)
-							.roles(Set.of(AccountRole.ADMIN, AccountRole.USER))
+							.email(appProperties.getUserUsername())
+							.password(appProperties.getUserPassword())
+							.roles(Set.of(AccountRole.USER))
 							.build();
 		
 		this.accountService.saveAccount(test);
+		*/
 		
 		//인증 서버 아이디 및 키
-		String clientId = "nhkApp";
-		String clientSecret = "pass";
-		
 		ResultActions perform = this.mockMvc.perform(post("/oauth/token")
-													.with(httpBasic(clientId, clientSecret))
-													.param("username", username)
-													.param("password", password)
+													.with(httpBasic(appProperties.getClientId(), appProperties.getClientSecret()))
+													.param("username", appProperties.getUserUsername())
+													.param("password", appProperties.getUserPassword())
 													.param("grant_type", "password"));
 		
 		var responseBody = perform.andReturn()

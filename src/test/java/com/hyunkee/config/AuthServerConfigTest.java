@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.hyunkee.account.Account;
 import com.hyunkee.account.AccountRole;
 import com.hyunkee.account.AccountService;
+import com.hyunkee.common.AppProperties;
 import com.hyunkee.common.BaseControllerTest;
 
 class AuthServerConfigTest extends BaseControllerTest{
@@ -22,31 +23,26 @@ class AuthServerConfigTest extends BaseControllerTest{
 	@Autowired
 	AccountService accountService;
 
+	@Autowired
+	AppProperties appProperties;
+	
 	@Test
 	@DisplayName("인증 토큰을 발급 받는 테스트")
 	public void getAuthToken() throws Exception{
 		
-		
-		//서버 기동시 걔정 접속 테스트 걔정
-		String username = "test@gmail.com";
-		String password = "test";
-				
+		/* (이미 AppConfig에서 생성함)
 		Account test = Account.builder()
-							.email(username)
-							.password(password)
+							.email(appProperties.getUserUsername())
+							.password(appProperties.getUserPassword())
 							.roles(Set.of(AccountRole.ADMIN, AccountRole.USER))
 							.build();
-		
 		this.accountService.saveAccount(test);
-		
-		//인증 서버 아이디 및 키
-		String clientId = "nhkApp";
-		String clientSecret = "pass";
+		*/
 		
 		this.mockMvc.perform(post("/oauth/token")
-							.with(httpBasic(clientId, clientSecret))
-							.param("username", username)
-							.param("password", password)
+							.with(httpBasic(appProperties.getClientId(), appProperties.getClientSecret()))
+							.param("username", appProperties.getUserUsername())
+							.param("password", appProperties.getUserPassword())
 							.param("grant_type", "password"))
 		            .andDo(print())
 		            .andExpect(status().isOk())
