@@ -19,7 +19,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDateTime;
-import java.util.Set;
 import java.util.stream.IntStream;
 
 import org.hamcrest.Matchers;
@@ -33,9 +32,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.common.util.Jackson2JsonParser;
 import org.springframework.test.web.servlet.ResultActions;
 
-import com.hyunkee.account.Account;
 import com.hyunkee.account.AccountReopository;
-import com.hyunkee.account.AccountRole;
 import com.hyunkee.account.AccountService;
 import com.hyunkee.common.AppProperties;
 import com.hyunkee.common.BaseControllerTest;

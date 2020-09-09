@@ -6,7 +6,6 @@ import java.net.URI;
 import java.util.Optional;
 
 import javax.validation.Valid;
-import javax.websocket.server.PathParam;
 
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
