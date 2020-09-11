@@ -9,7 +9,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hyunkee.account.Account;
+import com.hyunkee.account.AccountSerializer;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -62,6 +64,7 @@ public class Event {
 	
 	//Event 와 Account 단방향 연결 JPA
 	@ManyToOne
+	@JsonSerialize(using = AccountSerializer.class)
 	private Account manager;
 	
 	
