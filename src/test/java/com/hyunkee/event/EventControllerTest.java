@@ -19,6 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import org.hamcrest.Matchers;
@@ -32,7 +33,9 @@ import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.common.util.Jackson2JsonParser;
 import org.springframework.test.web.servlet.ResultActions;
 
+import com.hyunkee.account.Account;
 import com.hyunkee.account.AccountReopository;
+import com.hyunkee.account.AccountRole;
 import com.hyunkee.account.AccountService;
 import com.hyunkee.common.AppProperties;
 import com.hyunkee.common.BaseControllerTest;
@@ -59,7 +62,7 @@ public class EventControllerTest extends BaseControllerTest{
 	@BeforeEach// junit4 @Before 대응 -> 테스트 케이스가 실행하면서 이전의 인메모리 db 데이터 삭제
 	public void init() {
 		this.eventRepository.deleteAll();
-		//this.accountReopository.deleteAll(); -> appConfig에서 1번만 생성 되기 때문에 굳이 초기화 시킬 필요 없다.
+		this.accountReopository.deleteAll(); // appConfig에서 1번만 생성 되기 때문에 굳이 초기화 시킬 필요 없다.
 	}
 	
 	//테스트케이스 1 : 입력값들을 전달하면 JSON 응답으로 201이 나오는지 확인
@@ -103,32 +106,31 @@ public class EventControllerTest extends BaseControllerTest{
 		
 	}
 
+	
+	
 	/**
 	 * 인증키 받기 
 	 * @return
 	 * @throws Exception
 	 */
 	private String getBearerToken() throws Exception {
-		return "Bearer "+getOauth2Token();
+		return getBearerToken(true);
 	}
+	private String getBearerToken(Boolean needToAccount) throws Exception {
+		return "Bearer "+getOauth2Token(needToAccount);
+	}
+	
 	
 	/**
 	 * 인증키 받기
 	 * @return
 	 * @throws Exception
 	 */
-	private String getOauth2Token() throws Exception{
+	private String getOauth2Token(Boolean needToAccount) throws Exception{
 		
-		/* 
-		//서버 기동시 걔정 접속 테스트 걔정
-		Account test = Account.builder()
-							.email(appProperties.getUserUsername())
-							.password(appProperties.getUserPassword())
-							.roles(Set.of(AccountRole.USER))
-							.build();
-		
-		this.accountService.saveAccount(test);
-		*/
+		if(needToAccount) {
+			createAccount();
+		}
 		
 		//인증 서버 아이디 및 키
 		ResultActions perform = this.mockMvc.perform(post("/oauth/token")
@@ -148,6 +150,21 @@ public class EventControllerTest extends BaseControllerTest{
 		
 	}
 
+	private Account createAccount() {
+		//서버 기동시 걔정 접속 테스트 걔정
+		Account test = Account.builder()
+							.email(appProperties.getUserUsername())
+							.password(appProperties.getUserPassword())
+							.roles(Set.of(AccountRole.USER))
+							.build();
+		
+		return this.accountService.saveAccount(test);
+	}
+
+	
+	
+	
+	
 	//테스트케이스 2 : 잘못된 파라미터 입력값 입력시 Bad request 응답확인
 	@Test
 	@DisplayName("입력 받을 수 없는 값을 사용한 경우에 에러가 발생하는 테스트")
@@ -363,7 +380,7 @@ public class EventControllerTest extends BaseControllerTest{
 							   fieldWithPath("free").description("free of new Event"),
 							   fieldWithPath("offline").description("offline of new Event"),
 							   fieldWithPath("eventStatus").description("event Status of new Event"),
-							   fieldWithPath("manager").description("manager of new Event"),
+							   fieldWithPath("manager.id").description("manager of new Event"),
 							   fieldWithPath("_links.self.href").description("link to query self"),
 							   fieldWithPath("_links.query-events.href").description("link to query events"),
 							   fieldWithPath("_links.update-event.href").description("link to update event."),
@@ -434,7 +451,9 @@ public class EventControllerTest extends BaseControllerTest{
 	@Test
 	@DisplayName("기존의 이벤트를 하나 조회하기.")
 	public void getEvent() throws Exception{
-		Event event = this.generateEvent(100);
+		
+		Account account = this.createAccount();
+		Event event = this.generateEvent(100, account);
 		
 		this.mockMvc.perform(get("/api/events/{id}", event.getId()))
 					.andExpect(status().isOk())
@@ -448,7 +467,18 @@ public class EventControllerTest extends BaseControllerTest{
 	
 	//테스트 이벤트 생성 메서드
 	private Event generateEvent(int i) {
-		Event event = Event.builder()
+		Event event = buildEvent(i);
+		return this.eventRepository.save(event);
+	}
+	//메서드 오버라이딩이 필요한 이유 기존의 소스 전부를 건들지 않고 새로운 기능을 추가 하기 위해 있다.
+	private Event generateEvent(int i, Account account) {
+		Event event = buildEvent(i);
+		event.setManager(account);
+		return this.eventRepository.save(event);
+	}
+	
+	private Event buildEvent(int i) {
+		return Event.builder()
 						.name("Spring_Test_"+i)
 						.description("REST API Develop Test_" + i)
 						.beginEventDateTime(LocalDateTime.of(2020, 8, 21, 5, 18))
@@ -463,9 +493,9 @@ public class EventControllerTest extends BaseControllerTest{
 						.offline(true)
 						.eventStatus(EventStatus.DRAFT)
 						.build();
-		
-		return this.eventRepository.save(event);
 	}
+	
+	
 	
     @Test
     @DisplayName("없는 이벤트는 조회했을 때 404 응답받기")
@@ -480,7 +510,8 @@ public class EventControllerTest extends BaseControllerTest{
 	@DisplayName("업데이트 이벤트를 정상적으로 수정하기")
 	public void updateEvent() throws Exception{
 		//Given
-		Event event = this.generateEvent(200);
+		Account account = this.createAccount();
+		Event event = this.generateEvent(200, account);
 		EventDto eventDto = this.modelMapper.map(event, EventDto.class);
 		String eventName = "Updated Event";
 		eventDto.setName(eventName);
@@ -488,7 +519,7 @@ public class EventControllerTest extends BaseControllerTest{
 		//when & then
 		this.mockMvc.perform(put("/api/events/{id}",event.getId())
 								//인증키 받기
-								.header(HttpHeaders.AUTHORIZATION, getBearerToken())     
+								.header(HttpHeaders.AUTHORIZATION, getBearerToken(false))     
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(this.objectMapper.writeValueAsString(eventDto)))
 				.andDo(print())
