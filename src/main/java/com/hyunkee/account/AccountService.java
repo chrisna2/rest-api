@@ -39,13 +39,14 @@ public class AccountService implements UserDetailsService{
 											//예외 처리
 											.orElseThrow(() -> new UsernameNotFoundException(username));
 		
-		return new User(account.getEmail(), account.getPassword(), authorities(account.getRoles()));
+		return new AccountAdapter(account);
 	}
 
+	/*
 	private Collection<? extends GrantedAuthority> authorities(Set<AccountRole> roles) {
 		return roles.stream()
 				.map(r -> new SimpleGrantedAuthority("ROLE"+r.name()))
 				.collect(Collectors.toSet());
-	}
+	}*/
 
 }

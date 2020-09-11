@@ -555,5 +555,35 @@ public class EventControllerTest extends BaseControllerTest{
 				.andExpect(status().isNotFound());
 	}
 	
+	@Test
+	@DisplayName("30개의 이벤트를 10개씩 두번째 페이지 조회하기, 인증 정보 포함")
+	public void queryEventWithAuthentication() throws Exception{
+
+		/*//테스트 이벤트 생성 람다식
+		IntStream.range(0, 30).forEach(i -> {
+			this.generateEvent(i);
+		});*/
+		
+		// 이렇게 쓸줄 알아야 고수다.... 람다식 배웠으면 써먹어야지!
+		IntStream.range(0,  30).forEach(this::generateEvent);
+		
+		
+		//이벤트 조회 - 페이징 - 정렬
+		this.mockMvc.perform(get("/api/events")
+								//사용자 정보 접근
+								.header(HttpHeaders.AUTHORIZATION, getBearerToken())     
+								.param("page", "1")
+								.param("size", "10")
+								.param("sort", "name,DESC"))
+					.andDo(print())
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("page").exists())
+					.andExpect(jsonPath("_embedded.eventList[0]._links.self").exists())
+					.andExpect(jsonPath("_links.self").exists())
+					.andExpect(jsonPath("_links.profile").exists())
+					.andExpect(jsonPath("_links.create-event").exists())
+					.andDo(document("query-events"))
+					;
+	}
 	
 }

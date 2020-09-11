@@ -16,7 +16,12 @@ import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +31,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import com.hyunkee.account.Account;
+import com.hyunkee.account.AccountAdapter;
+import com.hyunkee.account.CurrentUser;
 import com.hyunkee.common.ErrorsResource;
 
 @Controller
@@ -45,8 +53,10 @@ public class EventController {
 	}
 
 	@PostMapping
-	public ResponseEntity createEvent(@RequestBody @Valid EventDto eventDto, Errors errors) {
-
+	public ResponseEntity createEvent(@RequestBody @Valid EventDto eventDto, 
+									  Errors errors,
+									  @CurrentUser Account account) {
+		
 		// 바인딩 할때 에러 발생 여부 확인
 		if (errors.hasErrors()) {
 			return badReq(errors);//이게 빠진거구나.. ㄷㄷ
@@ -78,6 +88,14 @@ public class EventController {
 		
 		// 이벤트 업데이트 처리 --> 실제로는 서비스 단에서 처리
 		event.update();
+		
+		
+		//메니저 정보 설정이 가능 (마지막 강의)
+		event.setManager(account);
+		
+		
+		
+		
 		Event newEvent = this.eventRepository.save(event);
 		// --> 실제로는 서비스 단에서 처리 (주의!!)
 		
@@ -96,12 +114,27 @@ public class EventController {
 	
 	//30개의 이벤트를 10개씩 두번째 페이지 조회하기
 	@GetMapping
-	public ResponseEntity inqueryEvent(Pageable pageable, PagedResourcesAssembler<Event> assambler) {
+	public ResponseEntity inqueryEvent(Pageable pageable, 
+									   PagedResourcesAssembler<Event> assambler,
+									   @CurrentUser Account account) {
+		
+		/*
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		User user = (User)authentication.getPrincipal();
+		*/
+		
 		Page<Event> page = this.eventRepository.findAll(pageable);
 		//각각에 들어있는 이벤트에 대한 링크를 작성하기 위해서 다음과 같이 작성
+		//[추가] 디버그 모드에서는 브레이크 포인트에서 멈추니 F5눌러서 다음확인
 		var pagedResources = assambler.toModel(page, e -> new EventResource(e));
 		pagedResources.add(new Link("/docs/index.html#resources-events-list").withRel("profile"));
+		
+		if(account != null) {
+			pagedResources.add(linkTo(EventController.class).withRel("create-event"));
+		}
+		
 		return ResponseEntity.ok(pagedResources);
+		
 	}
 	
 	
@@ -111,7 +144,7 @@ public class EventController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity getEventOne(@PathVariable Integer id) {
+	public ResponseEntity getEventOne(@PathVariable Integer id, @CurrentUser Account account) {
 		
         Optional<Event> optionalEvent = this.eventRepository.findById(id);
         
@@ -123,6 +156,13 @@ public class EventController {
         Event event = optionalEvent.get();
         EventResource eventResource = new EventResource(event);
         eventResource.add(new Link("/docs/index.html#resources-events-get").withRel("profile"));
+        
+        //인증된 사용자인 경우 사용자 관련 링크 추가
+        if(event.getManager().equals(account)) {
+        	eventResource.add(linkTo(EventController.class).slash(event.getId()).withRel("update-event"));
+        }
+        
+        
         logger.info("★ok");
         return ResponseEntity.ok(eventResource);
 	}
@@ -132,7 +172,8 @@ public class EventController {
 	@PutMapping("/{id}")
 	public ResponseEntity updateEvent(@PathVariable Integer id,
 									  @RequestBody @Valid EventDto eventDto,
-									  Errors errors) {
+									  Errors errors,
+									  @CurrentUser Account account) {
 		
 		Optional<Event> optionalEvent = this.eventRepository.findById(id);
 		
@@ -151,6 +192,12 @@ public class EventController {
 		}
 
 		Event exiEvent = optionalEvent.get();
+
+		//인증된 이벤트 사용자가 아닌 경우 UNAUTHORIZED 이벤트 발동
+		if(!exiEvent.getManager().equals(account)) {
+			return new ResponseEntity(HttpStatus.UNAUTHORIZED);
+		}
+		
 		this.modelMapper.map(eventDto, exiEvent);
 		Event savedEvent = this.eventRepository.save(exiEvent);
 				
